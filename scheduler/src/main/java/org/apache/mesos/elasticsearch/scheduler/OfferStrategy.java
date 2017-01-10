@@ -11,6 +11,8 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Offer strategy
@@ -44,6 +46,21 @@ public class OfferStrategy {
                 return false;
             }
         }
+    }
+
+    protected boolean isInIntendedCluster(Protos.Offer offer) {
+        String placementClusterBy = configuration.getPlacementClusterBy();
+        if (placementClusterBy == null || placementClusterBy.isEmpty()) {
+            return true;
+        }
+
+        String[] clusterRule = placementClusterBy.split("=");
+        if (clusterRule.length != 2) {
+            return true;
+        }
+
+        Stream<Protos.Attribute> attributes = offer.getAttributesList().stream();
+        return attributes.allMatch(attr -> attr.getName().equals(clusterRule[0]) && attr.hasText() && attr.getText().getValue().equals(clusterRule[1]));
     }
 
     protected OfferStrategy(Configuration configuration, ClusterState clusterState) {

@@ -16,11 +16,7 @@ import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -57,6 +53,7 @@ public class Configuration {
     public static final String FRAMEWORK_USE_DOCKER = "--frameworkUseDocker";
     public static final String JAVA_HOME = "--javaHome";
     public static final String USE_IP_ADDRESS = "--useIpAddress";
+    public static final String PLACEMENT_CLUSTER_BY = "--placementClusterBy";
     public static final String ELASTICSEARCH_PORTS = "--elasticsearchPorts";
     public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
     public static final String CONTAINER_PATH_CONF = "/usr/share/elasticsearch/config";
@@ -89,7 +86,7 @@ public class Configuration {
     @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
     private String executorName = "elasticsearch-executor";
     @Parameter(names = {EXECUTOR_LABELS}, description = "One or more labels given to the executor task." +
-        "E.g. 'environment=prod bananas=apples'", variableArity = true)
+            "E.g. 'environment=prod bananas=apples'", variableArity = true)
     private List<String> executorLabels = new ArrayList<>();
     @Parameter(names = {DATA_DIR}, description = "The host data directory used by Docker volumes in the executors. [DOCKER MODE ONLY]")
     private String dataDir = DEFAULT_HOST_DATA_DIR;
@@ -115,6 +112,9 @@ public class Configuration {
     private String javaHome = "";
     @Parameter(names = {USE_IP_ADDRESS}, arity = 1, description = "If true, the framework will resolve the local ip address. If false, it uses the hostname.")
     private Boolean isUseIpAddress = false;
+    @Parameter(names = {PLACEMENT_CLUSTER_BY}, arity = 1, description = "The placement clustering strategy of the elasticsearch executor. " +
+            "If specified, the executor will be placed in the given cluster only.")
+    private String placementClusterBy = "";
 
     // **** External Volumes
     @Parameter(names = {EXTERNAL_VOLUME_DRIVER}, description = "Use external volume storage driver. By default, nodes will use volumes on host.")
@@ -187,7 +187,7 @@ public class Configuration {
         for (String keyValue : executorLabels) {
             String[] kvp = keyValue.split("=", 2);
             if (kvp.length == 2) {
-              map.put(kvp[0], kvp[1]);
+                map.put(kvp[0], kvp[1]);
             }
         }
 
@@ -216,6 +216,10 @@ public class Configuration {
 
     public Boolean getIsUseIpAddress() {
         return isUseIpAddress;
+    }
+
+    public String getPlacementClusterBy() {
+        return placementClusterBy;
     }
 
     public String getElasticsearchBinary() {

@@ -44,7 +44,18 @@ public class OfferStrategyTest {
         when(esTaskStatus.getStatus()).thenReturn(taskStatus());
         when(clusterState.getStatus(any(Protos.TaskID.class))).thenReturn(esTaskStatus);
     }
-    
+
+    @Test
+    public void willDeclineIfNotInCluster() throws Exception {
+        when(configuration.getPlacementClusterBy()).thenReturn("role=not_slave");
+        when(clusterState.getTaskList()).thenReturn(singletonList(createTask("host1")));
+
+        Protos.Attribute attribute = Protos.Attribute.newBuilder().setName("role").setType(Protos.Value.Type.TEXT).setText(Protos.Value.Text.newBuilder().setValue("slave")).build();
+        final OfferStrategyNormal.OfferResult result = offerStrategy.evaluate(baseOfferBuilder("host3").addAttributes(attribute).build());
+        assertFalse(result.acceptable);
+        assertEquals("Host not in the placement cluster", result.reason.get());
+    }
+
     @Test
     public void willDeclineIfHostIsAlreadyRunningTask() throws Exception {
         when(clusterState.getTaskList()).thenReturn(singletonList(createTask("host1")));
@@ -132,6 +143,7 @@ public class OfferStrategyTest {
         assertFalse(offerResult.acceptable);
         assertEquals("Offer did not have enough CPU resources", offerResult.reason.get());
     }
+
     @Test
     public void willDeclineIfOfferDoesNotEnoughMem() throws Exception {
         when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));

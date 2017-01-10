@@ -15,6 +15,7 @@ public class OfferStrategyExternalStorage extends OfferStrategy {
         super(configuration, clusterState);
 
         acceptanceRules = asList(
+                new OfferRule("Host not in the placement cluster", offer -> !isInIntendedCluster(offer)),
                 new OfferRule("Host already running task", this::isHostAlreadyRunningTask),
                 new OfferRule("Hostname is unresolveable", offer -> !isHostnameResolveable(offer.getHostname())),
                 new OfferRule("First ES node is not responding", offer -> !isAtLeastOneESNodeRunning()),
